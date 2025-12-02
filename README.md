@@ -1,103 +1,88 @@
-🤖 Projeto: Olhos Robóticos e Braços com Arduino
+# 🤖 Projeto Robô Multitarefas com Arduino (OLED, LCD, Servo e Semáforo)
 
-Este projeto foi criado para aprender conceitos de robótica, eletrônica
-e programação com Arduino.
-Ele mostra como controlar olhos animados em um display OLED e dois
-braços com servos motores, de forma sincronizada e sem travar o código.
+Este projeto demonstra a **multitarefa cooperativa** em um microcontrolador Arduino, utilizando a função `millis()` para gerenciar o tempo de forma não-bloqueante. O sistema integra dois displays I2C, dois servos motores e um conjunto de LEDs que simulam um semáforo, todos funcionando **simultaneamente** e de forma coordenada.
 
-------------------------------------------------------------------------
+---
 
-🎯 Objetivos de Aprendizado
+## ⚙️ Componentes Necessários
 
-1.  Entender como usar um display OLED para mostrar animações.
-2.  Aprender a controlar servos motores com precisão.
-3.  Usar millis() no lugar de delay() para criar movimentos suaves e
-    simultâneos.
-4.  Criar um ciclo de animação que faz o robô parecer vivo.
+| Componente | Quantidade | Observações |
+| :--- | :---: | :--- |
+| **Arduino** Uno/Nano | 1 | Placa principal. |
+| **Display OLED** I2C (SSD1306) | 1 | 128x64 pixels (Conteúdo estático: Imagem). |
+| **Display LCD** I2C (16x2) | 1 | Com módulo I2C (Conteúdo estático: Olhos customizados). |
+| **Servo Motores** (SG90 ou similar) | 2 | Para os "braços" do robô (Movimento lento e contínuo). |
+| **LED Vermelho, Amarelo, Verde** | 1 de cada | Simulação de Semáforo. |
+| **Resistores** (220 $\Omega$ ou 330 $\Omega$) | 3 | Para proteger os LEDs. |
 
-------------------------------------------------------------------------
+---
 
-🛠️ Materiais Necessários
+## 🔌 Conexões de Hardware
 
--   1x Arduino Nano R3 (pode usar Uno ou outro compatível).
--   1x Display OLED I2C (SSD1306).
--   2x Servos motores pequenos (9g).
--   1x Protoboard.
--   Jumpers (fios de conexão).
+### 1. Comunicação I2C (Displays)
 
-  Dica: se os servos forem grandes, use uma fonte externa para evitar
-  sobrecarregar o Arduino.
+Ambos os displays compartilham os mesmos pinos de comunicação:
 
-------------------------------------------------------------------------
+| Pino do Componente | Pino do Arduino (Uno/Nano) |
+| :---: | :--- |
+| **SDA** (Dados) | **A4** (Analógico 4) |
+| **SCL** (Clock) | **A5** (Analógico 5) |
+| **VCC/GND** | **+5V/GND** |
 
-🚀 Funcionamento do Código
+### 2. Servo Motores
 
-🔹 1. Início (Setup)
+Conectados a pinos com capacidade **PWM** (Sinal Laranja/Amarelo):
 
--   O display OLED é iniciado.
--   Os olhos começam fechados.
--   Os braços começam na posição para baixo.
+| Servo | Pino do Arduino |
+| :--- | :---: |
+| **Esquerdo** | **Digital 9** |
+| **Direito** | **Digital 10** |
 
-🔹 2. Movimento dos braços (Loop)
+### 3. Semáforo (LEDs)
 
--   O Arduino verifica o tempo usando millis().
--   A cada pequeno intervalo, os servos se movem 1 grau por vez até
-    chegarem na posição final.
--   Isso deixa o movimento suave e realista.
+Conecte os LEDs aos pinos digitais, utilizando um resistor em série:
 
-🔹 3. Animação dos olhos e braços (Sequência)
+| Cor do LED | Pino do Arduino |
+| :--- | :---: |
+| **Vermelho** | **Digital 7** |
+| **Amarelo** | **Digital 6** |
+| **Verde** | **Digital 5** |
 
-O robô passa por várias fases, repetindo em um ciclo:
 
-  Tempo (segundos)   Ação
-  ------------------ -----------------------------------------------------------
-  2s                 Olhos abrem, braços sobem até o meio.
-  4s                 Robô fica feliz, começa a rir, braços levantam para cima.
-  6s                 Robô fica cansado, braços descem para baixo.
-  8s                 Olhos fecham e tudo reinicia.
 
-------------------------------------------------------------------------
+[Image of Arduino LED connection with resistor]
 
-📊 Conceitos Importantes
 
-✅ Programação não bloqueante → permite que várias coisas aconteçam ao
-mesmo tempo.
-✅ Controle gradual de servos → movimentos mais naturais.
-✅ Uso de flags (verdadeiro/falso) → garante que cada evento só acontece
-no tempo certo.
-✅ Integração de hardware → display + servos funcionando juntos.
+---
 
-------------------------------------------------------------------------
+## 📚 Bibliotecas Necessárias
 
-🎬 Imagine o Robô…
+Instale as seguintes bibliotecas no seu Arduino IDE (via Gerenciador de Bibliotecas):
 
--   No começo está dormindo 😴 (olhos fechados, braços baixos).
--   Depois acorda feliz 😀 (olhos abertos, braços levantados).
--   Mais tarde fica cansado 💤 (olhos semicerrados, braços descendo).
--   Por fim, volta a dormir.
+1.  **`Adafruit GFX Library`**
+2.  **`Adafruit SSD1306`**
+3.  **`LiquidCrystal I2C`**
+4.  **`Servo`** (Geralmente nativa no IDE)
 
-E o ciclo se repete sem parar.
+---
 
-------------------------------------------------------------------------
+## 🧠 Funcionamento do Código
 
-📚 Bibliotecas Usadas
+O segredo para o **funcionamento simultâneo** (LEDs mudando enquanto Servos se movem) é a eliminação da função `delay()` e a implementação de duas máquinas de tempo independentes na função `loop()`, baseadas em `millis()`.
 
-Essas bibliotecas devem ser instaladas na IDE Arduino:
+### 1. Conteúdo Estático (Setup)
 
--   Adafruit_SSD1306 → controla o display OLED.
--   Servo → controla os motores servo.
--   FluxGarage_RoboEyes → animações dos olhos.
+* Todo o código de desenho para o **OLED** (imagem) e para o **LCD** (olho customizado) é executado apenas no `setup()`.
+* O conteúdo dos displays permanece fixo durante toda a execução do programa.
 
-------------------------------------------------------------------------
+### 2. Lógica do Semáforo (Não-Bloqueante)
 
-⚙️ Ligações dos Componentes
+* Utiliza a variável `semaphoreState` (`0` a `3`) para saber a fase atual (Vermelho, Amarelo, Verde).
+* A cada ciclo do `loop()`, o código verifica se o tempo alocado para o estado atual (`RED_TIME`, `GREEN_TIME`, etc.) já passou usando: `if (millis() - lastSemaphoreChange >= duration)`.
+* Se o tempo esgotou, ele avança para o próximo estado e acende o LED correspondente, reiniciando o cronômetro.
 
--   OLED → conectado ao I2C do Arduino:
-    -   SDA → A4
-    -   SCL → A5
--   Servo Esquerdo → pino 9
--   Servo Direito → pino 10
--   Todos os servos → 5V e GND
+### 3. Lógica dos Servos (Movimento Contínuo e Lento)
 
-------------------------------------------------------------------------
-
+* O movimento é feito em **passos de 1 grau**, a cada **15ms** (`SERVO_INTERVAL`).
+* O código usa a mesma lógica `millis()`: `if (millis() - lastServoMove >= SERVO_INTERVAL)`.
+* **Movimento Oposto:** O `servoEsquerdo` avança de `0°` a `180°`, enquanto o `servoDireito` avança de `180°` a `0°` (`servoDireito.write(180 - servoPosition)`), criando o movimento de braços de forma espelhada e uniforme.
